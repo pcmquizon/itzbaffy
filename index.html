@@ -1,0 +1,307 @@
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>itzbaffy</title>
+    <meta name="description" content="Photographs. Drawings. By yours truly." />
+    <meta name="keywords" content="art, photography, drawing, sketching, artist" />
+    <meta name="author" content="itzbaffy" />
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+    <title>itzbaffy &mdash; Photographs. Drawings. By yours truly. </title>
+
+    <style type="text/css">
+      html, body, main {
+        padding: 0;
+        margin: 0;
+      }
+      
+      .wrapper {
+        height: 100%;
+        width: 100%;
+        background-color: black;
+      }
+      
+      .card {
+        display: flex;
+        justify-content: space-around;
+        align-items: center; 
+        height: 100%;
+      }
+      
+      .card * {
+        color: white;
+      }
+      
+      .logo-wrapper {
+        padding: 5em 0;
+        display: flex;
+        justify-content: center;
+      }
+      
+      .card-logo {
+        border-radius: 100%;
+        width: 250px;
+      }
+      
+      .card-details {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      
+      .card-handle {
+        font-weight: 700;
+        font-family: Roboto,sans-serif;
+        font-size: 2em;
+        text-align: center;
+      }
+      
+      .card-socials {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+      }
+      
+      .social-icon {
+        width: 3em;
+        margin: 0.5em 0.5em;
+      }
+      
+      .wrapper-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+      }
+      
+      .spinner {
+        border: 16px solid #f3f3f3; 
+        border-top: 16px solid #3498db; 
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        animation: spin 2s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .hidden {
+        display: none;
+      }
+      
+      /* Mobile / Tablet */
+      @media screen and (max-width: 768px) {
+        .card {
+          flex-direction: column;
+          justify-content: center;
+          max-width: 100%;
+        }
+        
+        .card-details {
+          width: 60%;
+        }
+        
+        .logo-wrapper {
+          padding: 2em 0 0;
+        }
+        
+        .card-logo {
+          width:150px;
+        }
+        
+        .card-handle {
+          font-size: 1.5em;
+        }
+        
+        .social-icon {
+          width: 4em;
+        }
+      }
+    </style>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap" rel="stylesheet">
+  </head>
+  
+  <body class="wrapper">
+    <div class="wrapper-spinner" id="spinner">
+      <div class="spinner"></div>
+    </div>
+    
+    <main class="card hidden" id="card">
+      <section class="logo-wrapper">
+        <img class="card-logo" id="logo" />
+      </section>
+      
+      <section class="card-details">
+        <div class="card-handle">
+          <h1 id="handle"></h1>
+        </div>
+        
+        <div class="card-socials" id="socials"></div>
+      </section>
+    </main>
+    
+    <script>
+      (function () {
+        var src = 'https://cdnjs.cloudflare.com/ajax/libs/eruda/2.3.3/eruda.min.js';
+        if (!/eruda=true/.test(window.location) && localStorage.getItem('active-eruda') != 'true') return;
+        document.write('<scr' + 'ipt src="' + src + '"></scr' + 'ipt>');
+        document.write('<scr' + 'ipt>eruda.init();</scr' + 'ipt>');
+    })();
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/ejs@3.1.3/ejs.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.14.4/firebase-analytics.js"></script>
+    
+    <script>   
+      const addJsonLd = function (handle, email, socials) {
+        var el = document.createElement('script');
+        el.type = 'application/ld+json';
+        el.text = JSON.stringify({
+          "@context": "http://schema.org",
+          "@type" : "Person",
+          "name": handle,
+          "url": "http://" + window.location.hostname,
+          "email": email,
+          "sameAs" : socials
+        });
+        
+        document.querySelector('body').appendChild(el);
+      }
+     
+      const show = function (elem) {
+        elem.style.display = 'initial';
+      };
+      
+      const hide = function (elem) {
+      	  elem.style.display = 'none';
+      };
+      
+      const toggle = function (elem) {
+        if (elem && elem.style.display === 'initial') {
+      		  hide(elem);
+      		  return;
+      	 } 
+      
+        show(elem);
+      };
+      
+      const getActiveSocials = function (socials) {
+        return socials
+        .filter(function(socialMedia){
+          return socialMedia.visible;
+        });
+      };
+      
+      const buildSocialLinks = function (socials) {
+        return socials
+        .sort(function(socialMediaA, socialMediaB){
+          return socialMediaA.weight === 0 && socialMediaB.weight === 0 ?
+          socialMediaB.label - socialMediaA.label:
+          socialMediaB.weight - socialMediaA.weight;
+        })
+        .map(function(socialMedia){
+          var str = `
+            <a 
+              target="_blank"
+              href="<%= socialMedia.siteUrl %>" 
+              title="<% socialMedia.tooltipText %>"
+            > 
+              <img 
+                src="<%= socialMedia.iconUrl %>"
+                alt="<%- socialMedia.label %>"
+                class="social-icon"
+              />
+           </a>
+          `;
+           
+          return ejs.render(
+            str, 
+            {socialMedia: socialMedia}
+          );
+        })
+        .join(' ');
+      };
+      
+      const toggleLoader = function () {
+        const card = document.getElementById('card');
+        const spinner = document.getElementById('spinner');
+        
+        card.classList.toggle("hidden");
+        spinner.classList.toggle("hidden");
+      }
+      
+      const setContactInfo = function (handle, iconUrl, socials) {
+        document
+        .getElementById("handle")
+        .innerHTML = handle;
+        
+        document
+        .getElementById("logo")
+        .src = iconUrl;
+        
+        document
+        .getElementById("socials")
+        .innerHTML = socials;
+      };
+      
+      var firebaseConfig = {
+        apiKey: "AIzaSyDTWNJDSQM3X_eDveEl_Z77cHAQeBjMuHs",
+        authDomain: "itzbaffy-socials.firebaseapp.com",
+        databaseURL: "https://itzbaffy-socials.firebaseio.com",
+        projectId: "itzbaffy-socials",
+        storageBucket: "itzbaffy-socials.appspot.com",
+        messagingSenderId: "839303682429",
+        appId: "1:839303682429:web:ee4819b48c0c94ac2dd414",
+        measurementId: "G-CGJ7RELX48"
+      };
+    
+      firebase.initializeApp(firebaseConfig);
+      firebase.analytics();
+    
+      firebase
+      .firestore()
+      .collection('info')
+      .doc('6GdtLcSbrVI3ZuGknb6j')
+      .get()
+      .then(function(snapshot) {
+        const data = snapshot.data();
+        
+        const activeSocials = getActiveSocials(data.socials);
+        const socialMedias = buildSocialLinks(activeSocials);
+        
+        setContactInfo(
+          data.label,
+          data.iconUrl,
+          socialMedias
+        );
+        
+        const email = activeSocials.filter(function (social) {
+          return social.label === "Email";
+        }).map(function (social) {
+          return social.siteUrl.replace(/mailto:/g, '');
+        }).pop();
+        
+        const activeSocialLinks = activeSocials.map(function (social) {
+          return social.siteUrl;
+        }).filter(function (link) {
+          return !new RegExp(email).test(link);
+        });
+        
+        addJsonLd(data.label, email, activeSocialLinks),
+        
+        toggleLoader();
+      });
+    </script>
+  </body>
+</html>
