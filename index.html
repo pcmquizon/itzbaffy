@@ -76,9 +76,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       }
       
       .card-socials {
-        display: flex;
-        justify-content: space-around;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-gap: 16px;
       }
       
       .social-icon {
@@ -117,6 +117,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           flex-direction: column;
           justify-content: center;
           max-width: 100%;
+          padding: 32px;
         }
         
         .card-details {
@@ -133,6 +134,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         
         .card-handle {
           font-size: 1.5em;
+        }
+
+        .card-socials {
+          grid-template-columns: 1fr 1fr 1fr;
         }
         
         .social-icon {
